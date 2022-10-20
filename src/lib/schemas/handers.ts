@@ -1,17 +1,24 @@
 import { ReferenceObject, SchemaObject } from 'openapi3-ts';
 
-function typeHandler(
-    schema: SchemaObject | ReferenceObject
+export function typeHandler(
+    schema: SchemaObject | ReferenceObject,
+    prefix?: string
 ): string | undefined {
     if ((schema as ReferenceObject).$ref !== undefined) {
         let ref = (schema as ReferenceObject).$ref;
-        return ref.split('/').pop();
+        if (prefix === undefined) return ref.split('/').pop();
+        else {
+            return prefix + '.' + ref.split('/').pop();
+        }
     } else {
         let obj = schema as SchemaObject;
         switch (obj.type) {
             case 'string': {
                 if (Array.isArray(obj.enum)) {
                     return obj.enum.map((e) => `'${e}'`).join(' | ');
+                }
+                if (obj.format === 'binary') {
+                    return 'Blob';
                 }
                 return 'string';
             }
@@ -27,7 +34,7 @@ function typeHandler(
             }
             case 'array': {
                 if (obj.items !== undefined) {
-                    let type = typeHandler(obj.items);
+                    let type = typeHandler(obj.items, prefix);
                     if (type === undefined) type = 'any';
                     return `${type}[]`;
                 }
@@ -38,7 +45,7 @@ function typeHandler(
                     let props = [];
                     for (let name in obj.properties) {
                         let prop = obj.properties[name];
-                        let type = typeHandler(prop);
+                        let type = typeHandler(prop, prefix);
                         if (type === undefined) type = 'any';
                         let description = '';
                         let d = (prop as SchemaObject).description;
@@ -59,7 +66,7 @@ function typeHandler(
                         props.push(
                             t +
                                 `
-                        ${name}${n ? '?' : ''}: ${type}`
+                        "${name}"${nullable ? '?' : ''}: ${type}`
                         );
                     }
                     return `{
@@ -71,18 +78,55 @@ ${props.join('\n')}
     }
 }
 
+export function enumHandler(
+    name: string,
+    schema: SchemaObject | ReferenceObject
+): string | undefined {
+    let obj = schema as SchemaObject;
+    if (obj.enum === undefined) {
+        return undefined;
+    }
+    if (obj.type === 'string') {
+        return `export enum ${name} {
+            ${obj.enum.map((e) => `${e} = '${e}',`).join('\n')}
+        }`;
+    } else if (obj.type === 'number' || obj.type === 'integer') {
+        return `export type ${name} = ${typeHandler(schema)}`;
+    }
+    return undefined;
+}
+
+export function commonHandler(
+    name: string,
+    schema: SchemaObject | ReferenceObject
+): string | undefined {
+    let obj = schema as SchemaObject;
+    if (
+        obj.type === 'array' ||
+        obj.type === 'string' ||
+        obj.type === 'integer' ||
+        obj.type === 'null' ||
+        obj.type === 'boolean'
+    ) {
+        return `export type ${name} = ${typeHandler(schema)}`;
+    }
+    return undefined;
+}
+
 export function objectHandler(
     name: string,
     schema: SchemaObject | ReferenceObject
 ): string | undefined {
-    if ((schema as SchemaObject).type !== 'object') {
+    let obj = schema as SchemaObject;
+    if (obj.type !== 'object') {
         return undefined;
     }
-    let properties = (schema as SchemaObject).properties;
+    let properties = obj.properties;
     let paramsNames: string[] = [];
     let paramsType: Record<string, string> = {};
     let paramsTypeTemplate = [];
     let initTemplate = [];
+    let defaultMap: Record<string, string | number> = {};
     let nullable: Record<string, boolean | undefined> = {};
     // resolve properties
     if (properties !== undefined) {
@@ -98,6 +142,15 @@ export function objectHandler(
                 }
                 if (p.nullable !== undefined) {
                     nullable[paramName] = p.nullable;
+                }
+                if (p.default !== undefined) {
+                    if (typeof p.default === 'string') {
+                        defaultMap[paramName] = `'${p.default}'`;
+                    } else if (typeof p.default === 'number') {
+                        defaultMap[paramName] = `${p.default}`;
+                    } else if (typeof p.default === 'boolean') {
+                        defaultMap[paramName] = `${p.default}`;
+                    }
                 }
             }
         }
@@ -128,14 +181,20 @@ export class ${name} {
         ${paramsTypeTemplate.join(';\n')}
 
         constructor({
-            ${paramsNames.join(',\n')}
+            ${paramsNames
+                .map((e) => {
+                    if (defaultMap[e] !== undefined) {
+                        return `${e} = ${defaultMap[e]}`;
+                    }
+                    return e;
+                })
+                .join(',\n')}
         }:{
             ${paramsTypeTemplate.join(',\n')}
         }){
             ${initTemplate.join(';\n')}
         }
     }
-
     `;
     return template;
 }
