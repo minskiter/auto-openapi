@@ -89,9 +89,9 @@ export function enumHandler(
     if (obj.type === 'string') {
         return `export enum ${name} {
             ${obj.enum.map((e) => `${e} = '${e}',`).join('\n')}
-        }`;
+        };\n`;
     } else if (obj.type === 'number' || obj.type === 'integer') {
-        return `export type ${name} = ${typeHandler(schema)}`;
+        return `export type ${name} = ${typeHandler(schema)};\n`;
     }
     return undefined;
 }
@@ -108,7 +108,7 @@ export function commonHandler(
         obj.type === 'null' ||
         obj.type === 'boolean'
     ) {
-        return `export type ${name} = ${typeHandler(schema)}`;
+        return `export type ${name} = ${typeHandler(schema)};\n`;
     }
     return undefined;
 }
@@ -164,7 +164,7 @@ export function objectHandler(
                 */
                `;
             }
-            t += `${paramName}${nullable[paramName] === false ? '' : '?'}: ${
+            t += `"${paramName}"${nullable[paramName] === false ? '' : '?'}: ${
                 paramsType[paramName]
             }`;
             paramsTypeTemplate.push(t);
