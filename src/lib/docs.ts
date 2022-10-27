@@ -63,7 +63,7 @@ export class DOCHandler {
 
     constructor(doc: OpenAPIObject, output: string) {
         this._doc = doc;
-        this._output = output = output;
+        this._output = output;
         if (this._doc.openapi === undefined) {
             throw new Error('OpenAPI version is not defined');
         }
@@ -369,9 +369,9 @@ export class DOCHandler {
                                         (param.schema as SchemaObject)
                                             ?.nullable !== undefined
                                     ) {
-                                        paramsT += `${param.name}: ${type};\n`;
+                                        paramsT += `"${param.name}": ${type};\n`;
                                     } else {
-                                        paramsT += `${param.name}?: ${type};\n`;
+                                        paramsT += `"${param.name}"?: ${type};\n`;
                                     }
                                 }
                             }
@@ -388,9 +388,9 @@ export class DOCHandler {
                                         (param.schema as SchemaObject)
                                             ?.nullable !== undefined
                                     ) {
-                                        pathParamsT += `${param.name}: ${type};\n`;
+                                        pathParamsT += `"${param.name}": ${type};\n`;
                                     } else {
-                                        pathParamsT += `${param.name}?: ${type};\n`;
+                                        pathParamsT += `"${param.name}"?: ${type};\n`;
                                     }
                                 }
                             }
@@ -407,9 +407,9 @@ export class DOCHandler {
                                         (param.schema as SchemaObject)
                                             ?.nullable !== undefined
                                     ) {
-                                        headerParamsT += `${param.name}: ${type};\n`;
+                                        headerParamsT += `"${param.name}": ${type};\n`;
                                     } else {
-                                        headerParamsT += `${param.name}?: ${type};\n`;
+                                        headerParamsT += `"${param.name}"?: ${type};\n`;
                                     }
                                 }
                             }
