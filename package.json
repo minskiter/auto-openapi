@@ -1,6 +1,6 @@
 {
     "name": "@coolts/auto-openapi",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "OPEN API 3.0 - generate client API sub-package automatically",
     "main": "src/index.js",
     "repository": "https://github.com/minskiter/auto-openapi.git",
@@ -9,7 +9,7 @@
     "private": false,
     "scripts": {
         "dev": "node -r ts-node/register src/index.ts",
-        "build": "tsc --build --clean"
+        "build": "tsc --build"
     },
     "files": [
         "lib",
