@@ -1,4 +1,4 @@
 *.error
 node_modules
 temp
-lib
+.github
